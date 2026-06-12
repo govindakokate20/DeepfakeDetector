@@ -49,40 +49,58 @@ def home():
 def predict():
     start = time.time()
 
-    global model
+    try:
+        global model
 
-    if model is None:
-        model = load_model("deepfakevideo_model.keras")
-        print("Model loaded successfully!")
+        if "video" not in request.files:
+            return render_template("index.html", result="NO VIDEO UPLOADED", confidence=0)
 
-    video = request.files["video"]
-    filename = secure_filename(video.filename)
+        if model is None:
+            model = load_model("deepfakevideo_model.keras")
+            print("Model loaded successfully!")
 
-    save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    video.save(save_path)
+        video = request.files["video"]
+        filename = secure_filename(video.filename)
 
-    frames = extract_frames(save_path)
-    pred = model.predict(frames, verbose=0)[0][0]
+        if filename == "":
+            return render_template("index.html", result="NO FILE SELECTED", confidence=0)
 
-    if pred >= 0.5:
-        result = "FAKE VIDEO"
-        confidence = round(pred * 100, 2)
-    else:
-        result = "REAL VIDEO"
-        confidence = round((1 - pred) * 100, 2)
+        save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        video.save(save_path)
 
-    video_path = url_for("static", filename=f"uploads/{filename}")
+        frames = extract_frames(save_path)
+        pred = model.predict(frames, verbose=0)[0][0]
 
-    return render_template(
-        "index.html",
-        result=result,
-        confidence=confidence,
-        video_path=video_path,
-        model_name="MobileNetV2 + LSTM",
-        frames=20,
-        resolution="128 × 128",
-        prediction_time=round(time.time() - start, 2)
-    )
+        if pred >= 0.5:
+            result = "FAKE VIDEO"
+            confidence = round(pred * 100, 2)
+        else:
+            result = "REAL VIDEO"
+            confidence = round((1 - pred) * 100, 2)
 
+        video_path = url_for("static", filename=f"uploads/{filename}")
+
+        return render_template(
+            "index.html",
+            result=result,
+            confidence=confidence,
+            video_path=video_path,
+            model_name="MobileNetV2 + LSTM",
+            frames=20,
+            resolution="128 × 128",
+            prediction_time=round(time.time() - start, 2)
+        )
+
+    except Exception as e:
+        print("PREDICTION ERROR:", str(e))
+        return render_template(
+            "index.html",
+            result="ERROR DURING PREDICTION",
+            confidence=0,
+            model_name="MobileNetV2 + LSTM",
+            frames=20,
+            resolution="128 × 128",
+            prediction_time=round(time.time() - start, 2)
+        )
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
