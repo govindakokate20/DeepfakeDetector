@@ -13,7 +13,7 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 IMG_SIZE = 128
 FRAMES = 20
 
-model = load_model
+model = None
 
 def extract_frames(video_path):
     cap = cv2.VideoCapture(video_path)
