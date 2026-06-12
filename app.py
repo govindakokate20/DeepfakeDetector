@@ -13,8 +13,7 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 IMG_SIZE = 128
 FRAMES = 20
 
-model = load_model("deepfakevideo_model.keras")
-print("Model loaded successfully!")
+model = load_model
 
 def extract_frames(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -49,6 +48,12 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     start = time.time()
+
+    global model
+
+    if model is None:
+        model = load_model("deepfakevideo_model.keras")
+        print("Model loaded successfully!")
 
     video = request.files["video"]
     filename = secure_filename(video.filename)
